@@ -1,14 +1,19 @@
 from __future__ import annotations
 
 import logging
+import uuid
+from datetime import datetime, timezone
 from typing import Any
 
 import numpy as np
+import torch
 
 from config import (
     CORE_AUS,
     EMFACS_EMOTION_WEIGHT,
+    FACE_DETECTION_THRESHOLD,
     PYFEAT_EMOTION_WEIGHT,
+    get_device,
 )
 
 logger = logging.getLogger(__name__)
@@ -131,3 +136,98 @@ def fuse_emotions(
             p * PYFEAT_EMOTION_WEIGHT + e * EMFACS_EMOTION_WEIGHT, 4
         )
     return fused
+
+
+# ──────────────────────────────────────────────
+# FACS Engine (py-feat wrapper)
+# ──────────────────────────────────────────────
+
+def _create_detector():
+    """Lazy import to avoid loading py-feat at module level."""
+    from feat import Detector
+    device = get_device()
+    logger.info(f"Initializing py-feat Detector on device={device}")
+    return Detector(device=device)
+
+
+class FACSengine:
+    """FACS analysis engine wrapping py-feat Detector."""
+
+    def __init__(self):
+        self._detector = None
+
+    @property
+    def detector(self):
+        if self._detector is None:
+            self._detector = _create_detector()
+        return self._detector
+
+    def analyze_image(self, image_rgb: np.ndarray) -> dict:
+        """
+        Analyze a single RGB image.
+
+        Args:
+            image_rgb: numpy array (H, W, 3), uint8 RGB
+
+        Returns:
+            dict with success, aus, emotions, valence, arousal
+        """
+        try:
+            tensor = torch.from_numpy(image_rgb).permute(2, 0, 1).unsqueeze(0)
+            tensor = tensor.float() / 255.0
+
+            fex = self.detector.detect(
+                tensor,
+                data_type="tensor",
+                face_detection_threshold=FACE_DETECTION_THRESHOLD,
+            )
+
+            if fex.empty:
+                return {
+                    "success": False,
+                    "error": "no_face_detected",
+                    "frame_id": str(uuid.uuid4()),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+
+            row = fex.iloc[0]
+
+            # Extract AU presence values
+            aus = {}
+            for au_name in CORE_AUS:
+                aus[au_name] = round(float(row.get(au_name, 0.0)), 4)
+
+            # py-feat native emotions (column names are lowercase)
+            pyfeat_emotions = {
+                "Happiness": float(row.get("happiness", 0.0)),
+                "Sadness": float(row.get("sadness", 0.0)),
+                "Anger": float(row.get("anger", 0.0)),
+                "Fear": float(row.get("fear", 0.0)),
+                "Surprise": float(row.get("surprise", 0.0)),
+                "Disgust": float(row.get("disgust", 0.0)),
+            }
+
+            # EMFACS rule-based emotions
+            emfacs_emotions = map_emfacs_emotions(aus)
+
+            # Fuse both sources
+            emotions = fuse_emotions(pyfeat_emotions, emfacs_emotions)
+
+            return {
+                "success": True,
+                "frame_id": str(uuid.uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "aus": aus,
+                "emotions": emotions,
+                "valence": round(float(row.get("valence", 0.0)), 4),
+                "arousal": round(float(row.get("arousal", 0.0)), 4),
+            }
+
+        except Exception as e:
+            logger.error(f"FACS analysis failed: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "frame_id": str(uuid.uuid4()),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
