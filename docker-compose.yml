@@ -1,0 +1,16 @@
+services:
+  facs:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DEVICE=auto
+      - MAX_FPS=10
+    # GPU support (uncomment to enable)
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
