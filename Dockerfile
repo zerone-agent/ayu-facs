@@ -33,7 +33,6 @@ RUN python -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='nutPace/openface_weights', local_dir='./weights', repo_type='model')"
 
 COPY src/ ./
-COPY test_client.html ./
 
 ENV OPENFACE_WEIGHTS_DIR=/app/weights
 EXPOSE 8000

@@ -6,7 +6,6 @@ import uuid
 import cv2
 import numpy as np
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
-from fastapi.responses import HTMLResponse
 from pathlib import Path
 
 from config import MAX_FPS
@@ -77,14 +76,6 @@ async def ws_stream(websocket: WebSocket):
             await websocket.send_json({"success": False, "error": str(e)})
         except Exception:
             pass
-
-
-@app.get("/")
-async def index():
-    html_path = Path(__file__).parent / "test_client.html"
-    if html_path.exists():
-        return HTMLResponse(html_path.read_text())
-    return HTMLResponse("<h1>FACS Cloud Service</h1><p>test_client.html not found</p>")
 
 
 if __name__ == "__main__":
