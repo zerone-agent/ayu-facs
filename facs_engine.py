@@ -5,6 +5,10 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
+import os
+import tempfile
+
+import cv2
 import numpy as np
 import torch
 
@@ -71,6 +75,17 @@ EMFACS_RULES: dict[str, dict[str, Any]] = {
 
 EMOTION_NAMES = ["Happiness", "Sadness", "Anger", "Fear", "Surprise", "Disgust"]
 
+# OpenFace 3.0 emotion index → label mapping (AffectNet 8 classes)
+OPENFACE_EMOTIONS = ["Neutral", "Happy", "Sad", "Surprise", "Fear", "Disgust", "Anger", "Contempt"]
+
+# OpenFace 3.0 AU output index mapping
+# The multitask model outputs AU intensities in a fixed order
+OPENFACE_AU_ORDER = [
+    "AU01", "AU02", "AU04", "AU05", "AU06", "AU07",
+    "AU09", "AU10", "AU12", "AU14", "AU15", "AU17",
+    "AU18", "AU20", "AU23", "AU24", "AU25", "AU26", "AU28", "AU45",
+]
+
 
 def _compute_rule_score(rule: dict[str, Any], aus: dict[str, float]) -> float:
     """Compute emotion score from a single EMFACS rule given AU presence values."""
@@ -124,13 +139,13 @@ def map_emfacs_emotions(aus: dict[str, float]) -> dict[str, float]:
 
 
 def fuse_emotions(
-    pyfeat_emotions: dict[str, float],
+    openface_emotions: dict[str, float],
     emfacs_emotions: dict[str, float],
 ) -> dict[str, float]:
-    """Fuse py-feat native emotions with EMFACS rule results."""
+    """Fuse OpenFace 3.0 native emotions with EMFACS rule results."""
     fused = {}
     for emotion in EMOTION_NAMES:
-        p = pyfeat_emotions.get(emotion, 0.0)
+        p = openface_emotions.get(emotion, 0.0)
         e = emfacs_emotions.get(emotion, 0.0)
         fused[emotion] = round(
             p * PYFEAT_EMOTION_WEIGHT + e * EMFACS_EMOTION_WEIGHT, 4
@@ -139,28 +154,47 @@ def fuse_emotions(
 
 
 # ──────────────────────────────────────────────
-# FACS Engine (py-feat wrapper)
+# FACS Engine (OpenFace 3.0 wrapper)
 # ──────────────────────────────────────────────
 
-def _create_detector():
-    """Lazy import to avoid loading py-feat at module level."""
-    from feat import Detector
+def _init_openface():
+    """Lazy import and initialize OpenFace 3.0 models."""
+    from openface.face_detection import FaceDetector
+    from openface.multitask_model import MultitaskPredictor
+
     device = get_device()
-    logger.info(f"Initializing py-feat Detector on device={device}")
-    return Detector(device=device)
+    logger.info(f"Initializing OpenFace 3.0 on device={device}")
+
+    weights_dir = os.environ.get("OPENFACE_WEIGHTS_DIR",
+                                  os.path.expanduser("~/.openface/weights"))
+
+    face_model_path = os.path.join(weights_dir, "Alignment_RetinaFace.pth")
+    multitask_model_path = os.path.join(weights_dir, "MTL_backbone.pth")
+
+    if not os.path.exists(face_model_path) or not os.path.exists(multitask_model_path):
+        logger.info("Model weights not found, downloading via huggingface_hub...")
+        from huggingface_hub import snapshot_download
+        os.makedirs(weights_dir, exist_ok=True)
+        snapshot_download(repo_id="nutPace/openface_weights",
+                         local_dir=weights_dir, repo_type="model")
+
+    face_detector = FaceDetector(model_path=face_model_path, device=device)
+    multitask_predictor = MultitaskPredictor(model_path=multitask_model_path, device=device)
+
+    return face_detector, multitask_predictor
 
 
 class FACSengine:
-    """FACS analysis engine wrapping py-feat Detector."""
+    """FACS analysis engine wrapping OpenFace 3.0."""
 
     def __init__(self):
-        self._detector = None
+        self._face_detector = None
+        self._multitask_predictor = None
+        self._tmpdir = tempfile.mkdtemp(prefix="ayu_")
 
-    @property
-    def detector(self):
-        if self._detector is None:
-            self._detector = _create_detector()
-        return self._detector
+    def _ensure_initialized(self):
+        if self._face_detector is None:
+            self._face_detector, self._multitask_predictor = _init_openface()
 
     def analyze_image(self, image_rgb: np.ndarray) -> dict:
         """
@@ -173,16 +207,17 @@ class FACSengine:
             dict with success, aus, emotions, valence, arousal
         """
         try:
-            tensor = torch.from_numpy(image_rgb).permute(2, 0, 1).unsqueeze(0)
-            tensor = tensor.float() / 255.0
+            self._ensure_initialized()
 
-            fex = self.detector.detect(
-                tensor,
-                data_type="tensor",
-                face_detection_threshold=FACE_DETECTION_THRESHOLD,
-            )
+            # FaceDetector.get_face() only accepts file path — write to temp
+            image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+            tmp_path = os.path.join(self._tmpdir, "frame.jpg")
+            cv2.imwrite(tmp_path, image_bgr)
 
-            if fex.empty:
+            # Detect face (returns BGR cropped face)
+            face, dets = self._face_detector.get_face(tmp_path)
+
+            if face is None:
                 return {
                     "success": False,
                     "error": "no_face_detected",
@@ -190,28 +225,49 @@ class FACSengine:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                 }
 
-            row = fex.iloc[0]
+            # Run multitask prediction (takes BGR face)
+            emotion_logits, gaze_output, au_output = self._multitask_predictor.predict(face)
 
-            # Extract AU presence values
+            # Parse AU intensities → normalize to 0-1 range
+            au_values = au_output.squeeze().detach().cpu().numpy()
             aus = {}
-            for au_name in CORE_AUS:
-                aus[au_name] = round(float(row.get(au_name, 0.0)), 4)
+            for i, au_name in enumerate(OPENFACE_AU_ORDER):
+                if i < len(au_values):
+                    aus[au_name] = round(min(float(au_values[i]) / 5.0, 1.0), 4)
 
-            # py-feat native emotions (column names are lowercase)
-            pyfeat_emotions = {
-                "Happiness": float(row.get("happiness", 0.0)),
-                "Sadness": float(row.get("sadness", 0.0)),
-                "Anger": float(row.get("anger", 0.0)),
-                "Fear": float(row.get("fear", 0.0)),
-                "Surprise": float(row.get("surprise", 0.0)),
-                "Disgust": float(row.get("disgust", 0.0)),
+            # Parse emotion logits → probabilities (AffectNet 8 classes)
+            emotion_probs = torch.softmax(emotion_logits, dim=1).squeeze().detach().cpu().numpy()
+            openface_emotions = {
+                "Happiness": float(emotion_probs[1]),   # Happy
+                "Sadness": float(emotion_probs[2]),      # Sad
+                "Surprise": float(emotion_probs[3]),     # Surprise
+                "Fear": float(emotion_probs[4]),         # Fear
+                "Disgust": float(emotion_probs[5]),      # Disgust
+                "Anger": float(emotion_probs[6]),        # Anger
             }
 
             # EMFACS rule-based emotions
             emfacs_emotions = map_emfacs_emotions(aus)
 
             # Fuse both sources
-            emotions = fuse_emotions(pyfeat_emotions, emfacs_emotions)
+            emotions = fuse_emotions(openface_emotions, emfacs_emotions)
+
+            # Estimate valence/arousal from emotion distribution
+            valence = (
+                emotions["Happiness"] * 1.0
+                + emotions["Surprise"] * 0.2
+                - emotions["Sadness"] * 0.8
+                - emotions["Anger"] * 0.7
+                - emotions["Fear"] * 0.6
+                - emotions["Disgust"] * 0.5
+            )
+            arousal = (
+                emotions["Surprise"] * 0.8
+                + emotions["Fear"] * 0.9
+                + emotions["Anger"] * 0.7
+                + emotions["Happiness"] * 0.4
+                - emotions["Sadness"] * 0.3
+            )
 
             return {
                 "success": True,
@@ -219,8 +275,8 @@ class FACSengine:
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "aus": aus,
                 "emotions": emotions,
-                "valence": round(float(row.get("valence", 0.0)), 4),
-                "arousal": round(float(row.get("arousal", 0.0)), 4),
+                "valence": round(float(valence), 4),
+                "arousal": round(float(arousal), 4),
             }
 
         except Exception as e:
