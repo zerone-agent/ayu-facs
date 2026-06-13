@@ -13,3 +13,8 @@ weights/
 *.log
 
 .yione-uploads/
+
+# Benchmark images (download separately due to licenses)
+benchmarks/images/*.jpg
+benchmarks/images/*.png
+benchmarks/images/results.json
