@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 # EMFACS Rule Definitions
 # ──────────────────────────────────────────────
 
+# EMFACS rules adapted to the 8 AUs actually output by OpenFace 3.0:
+# AU01, AU02, AU04, AU06, AU09, AU12, AU25, AU26
+# (AU05/AU07/AU10/AU15/AU17/AU20/AU23 are not produced by this model.)
 EMFACS_RULES: dict[str, dict[str, Any]] = {
     "Happiness": {
         "aus": ["AU06", "AU12"],
@@ -35,41 +38,41 @@ EMFACS_RULES: dict[str, dict[str, Any]] = {
         "weights": [1.0, 1.0],
     },
     "Sadness": {
-        "aus": ["AU01", "AU04", "AU15"],
+        "aus": ["AU01", "AU04"],
         "logic": "any_n",
         "n": 2,
         "threshold": 0.4,
-        "weights": [1.0, 1.0, 2.0],
+        "weights": [1.0, 1.0],
     },
     "Anger": {
-        "aus": ["AU04", "AU05", "AU07", "AU23"],
+        "aus": ["AU04", "AU09"],
+        "logic": "any_n",
+        "n": 2,
+        "threshold": 0.4,
+        "weights": [1.0, 1.0],
+    },
+    "Fear": {
+        "aus": ["AU01", "AU02", "AU04", "AU25", "AU26"],
         "logic": "any_n",
         "n": 3,
         "threshold": 0.4,
-        "weights": [1.0, 1.0, 1.0, 1.0],
-    },
-    "Fear": {
-        "aus": ["AU01", "AU02", "AU04", "AU05", "AU20", "AU25"],
-        "logic": "any_n",
-        "n": 4,
-        "threshold": 0.4,
-        "weights": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-    },
-    "Surprise": {
-        "aus": ["AU01", "AU02", "AU05", "AU25", "AU26"],
-        "logic": "all_strong",
-        "strong_aus": ["AU01", "AU02", "AU05"],
-        "strong_threshold": 0.5,
-        "threshold": 0.3,
         "weights": [1.0, 1.0, 1.0, 1.0, 1.0],
     },
+    "Surprise": {
+        "aus": ["AU01", "AU02", "AU25", "AU26"],
+        "logic": "all_strong",
+        "strong_aus": ["AU01", "AU02"],
+        "strong_threshold": 0.5,
+        "threshold": 0.3,
+        "weights": [1.0, 1.0, 1.0, 1.0],
+    },
     "Disgust": {
-        "aus": ["AU09", "AU10", "AU17"],
+        "aus": ["AU09", "AU04"],
         "logic": "core",
         "core_au": "AU09",
         "core_threshold": 0.5,
         "threshold": 0.3,
-        "weights": [2.0, 1.0, 1.0],
+        "weights": [2.0, 1.0],
     },
 }
 
@@ -78,12 +81,17 @@ EMOTION_NAMES = ["Happiness", "Sadness", "Anger", "Fear", "Surprise", "Disgust"]
 # OpenFace 3.0 emotion index → label mapping (AffectNet 8 classes)
 OPENFACE_EMOTIONS = ["Neutral", "Happy", "Sad", "Surprise", "Fear", "Disgust", "Anger", "Contempt"]
 
-# OpenFace 3.0 AU output index mapping
-# The multitask model outputs AU intensities in a fixed order
+# OpenFace 3.0 AU output index mapping (8 AUs)
+# Source: CMU OpenFace-3.0 demo2.py au_labels
 OPENFACE_AU_ORDER = [
-    "AU01", "AU02", "AU04", "AU05", "AU06", "AU07",
-    "AU09", "AU10", "AU12", "AU14", "AU15", "AU17",
-    "AU18", "AU20", "AU23", "AU24", "AU25", "AU26", "AU28", "AU45",
+    "AU01",  # Inner Brow Raiser
+    "AU02",  # Outer Brow Raiser
+    "AU04",  # Brow Lowerer
+    "AU06",  # Cheek Raiser
+    "AU09",  # Nose Wrinkler
+    "AU12",  # Lip Corner Puller
+    "AU25",  # Lips Part
+    "AU26",  # Jaw Drop
 ]
 
 

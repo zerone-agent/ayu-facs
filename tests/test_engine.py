@@ -22,13 +22,13 @@ def mock_init():
             np.array([[0, 0, 48, 48, 0.95]]),
         )
 
-        # Mock OpenFace 3.0 outputs: emotion logits, gaze, AU intensities
+        # Mock OpenFace 3.0 outputs: emotion logits, gaze, AU intensities (8 AUs)
         emotion_logits = torch.zeros((1, 8))
         emotion_logits[0, 1] = 1.0  # Happiness highest
         gaze_output = torch.zeros((1, 2))
-        au_output = torch.zeros((1, 20))
-        au_output[0, 5] = 2.5   # AU06
-        au_output[0, 8] = 3.0   # AU12
+        au_output = torch.zeros((1, 8))
+        au_output[0, 3] = 2.5   # AU06 (index 3)
+        au_output[0, 5] = 3.0   # AU12 (index 5)
         predictor.predict.return_value = (emotion_logits, gaze_output, au_output)
 
         mock_create.return_value = (detector, predictor)
@@ -39,7 +39,7 @@ def test_engine_analyze_returns_aus(mock_init):
     engine = FACSengine()
     result = engine.analyze_image(np.zeros((224, 224, 3), dtype=np.uint8))
     assert result["success"] is True
-    assert len(result["aus"]) == 20
+    assert len(result["aus"]) == 8
 
 
 def test_engine_analyze_returns_emotions(mock_init):

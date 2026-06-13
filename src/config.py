@@ -23,12 +23,17 @@ PORT = int(os.getenv("PORT", "8000"))
 # === Face Detection ===
 FACE_DETECTION_THRESHOLD = 0.5
 
-# === 20 Core AUs (py-feat output column names) ===
+# === 8 Core AUs output by OpenFace 3.0 MTL model ===
+# Source: CMU OpenFace-3.0 demo2.py au_labels
 CORE_AUS = [
-    "AU01", "AU02", "AU04", "AU05", "AU06",
-    "AU07", "AU09", "AU10", "AU12", "AU14",
-    "AU15", "AU17", "AU18", "AU20", "AU23",
-    "AU24", "AU25", "AU26", "AU28", "AU45",
+    "AU01",  # Inner Brow Raiser
+    "AU02",  # Outer Brow Raiser
+    "AU04",  # Brow Lowerer
+    "AU06",  # Cheek Raiser
+    "AU09",  # Nose Wrinkler
+    "AU12",  # Lip Corner Puller
+    "AU25",  # Lips Part
+    "AU26",  # Jaw Drop
 ]
 
 # === Emotion Fusion Weights ===

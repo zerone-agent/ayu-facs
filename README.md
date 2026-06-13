@@ -9,7 +9,7 @@
 ```
 
 - **FACS 引擎**：OpenFace 3.0（openface-test），纯 Python + PyTorch，CPU 单帧 ~38ms
-- **情绪输出**：20 个 AU 强度 + 6 种基本情绪（OpenFace 原生 + EMFACS 规则融合）+ 效价/唤醒度
+- **情绪输出**：8 个 AU 强度 + 6 种基本情绪（OpenFace 原生 + EMFACS 规则融合）+ 效价/唤醒度
 - **部署**：Docker Compose 一键部署，CPU 模式，支持 GPU 切换
 
 ## API
@@ -111,8 +111,9 @@ docker compose logs -f
 
 ## 技术细节
 
-- **OpenFace 3.0**：29.4M 参数，4.2 GFLOPs，单模型同时输出 AU（20类）+ 情绪（8类）+ 眼神 + 关键点
-- **EMFACS 规则**：将 AU 组合映射为 6 种基本情绪（Happiness/Sadness/Anger/Fear/Surprise/Disgust）
+- **OpenFace 3.0**：29.4M 参数，4.2 GFLOPs，单模型同时输出 AU（8类）+ 情绪（8类）+ 眼神 + 关键点
+  - 8 个 AU：`AU01`（内眉提升）、`AU02`（外眉提升）、`AU04`（皱眉）、`AU06`（脸颊提升）、`AU09`（鼻皱）、`AU12`（嘴角上扬）、`AU25`（嘴唇分开）、`AU26`（下颌下垂）
+- **EMFACS 规则**：将可用 AU 组合映射为 6 种基本情绪（Happiness/Sadness/Anger/Fear/Surprise/Disgust），已根据模型实际输出裁剪为 8 个 AU 子集
 - **情绪融合**：OpenFace 原生情绪（权重 0.6）+ EMFACS 规则情绪（权重 0.4），可配置
 - **模型权重**：来自 `nutPace/openface_weights`（HuggingFace），构建时通过国内镜像下载
 
