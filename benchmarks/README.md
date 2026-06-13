@@ -14,7 +14,11 @@ This directory contains a small qualitative benchmark for the `/analyze` endpoin
 | `sadness.jpg` | sadness | FACES public preview (`066_y_m_s_a.jpg`) | Research-only |
 | `surprise.jpg` | surprise | Wikimedia Commons — "Wow" by Marcus Quigmire | CC BY-SA 2.0 |
 
-**Note:** The FACES images come from the [public preview collection](https://faces.mpdl.mpg.de/imeji/collection/IXTdg721TwZwyZ8e). They are provided for research methodology illustration. For broader use or redistribution, register at the FACES website and follow their release agreement.
+## What's in this repository
+
+- `surprise.jpg` is **committed** to Git under the [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/) license.
+- The six FACES images (`anger.jpg`, `disgust.jpg`, `fear.jpg`, `happiness.jpg`, `neutral.jpg`, `sadness.jpg`) are **not included** in this repository. They come from the [FACES public preview collection](https://faces.mpdl.mpg.de/imeji/collection/IXTdg721TwZwyZ8e), which is provided for research methodology illustration only. To use or redistribute them beyond research preview, register at the FACES website and follow their release agreement.
+- Run `python benchmarks/download_images.py` to download the FACES images and re-download `surprise.jpg` if needed.
 
 ## Run the benchmark
 

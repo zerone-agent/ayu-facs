@@ -16,5 +16,6 @@ weights/
 
 # Benchmark images (download separately due to licenses)
 benchmarks/images/*.jpg
+!benchmarks/images/surprise.jpg
 benchmarks/images/*.png
 benchmarks/images/results.json
