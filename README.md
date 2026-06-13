@@ -24,18 +24,42 @@
 ### POST /analyze
 
 ```bash
-curl -X POST http://localhost:8001/analyze -F 'file=@face.jpg'
+# 本地
+curl -X POST http://localhost:8001/analyze -F 'file=@assets/sample_face.jpg'
+
+# 远程 ECS 示例
+curl -X POST http://47.120.38.148:8001/analyze \
+  -F 'file=@assets/sample_face.jpg' \
+  -w "\nHTTP_CODE: %{http_code}\nTIME_TOTAL: %{time_total}s\n"
 ```
 
-返回示例：
+返回示例（基于 `assets/sample_face.jpg` 实测）：
 
 ```json
 {
   "success": true,
-  "aus": {"AU01": 0.0, "AU12": 0.85, ...},
-  "emotions": {"Happiness": 0.72, "Sadness": 0.01, ...},
-  "valence": 0.35,
-  "arousal": 0.12
+  "frame_id": "e51a8860-b0f6-4a7a-8d40-99e2e456e66d",
+  "timestamp": "2026-06-13T03:26:07.776523+00:00",
+  "aus": {
+    "AU01": 0.0005,
+    "AU02": 0.0,
+    "AU04": 0.0,
+    "AU05": 0.0,
+    "AU06": 0.0,
+    "AU07": 0.0,
+    "AU09": 0.1934,
+    "AU10": 0.0
+  },
+  "emotions": {
+    "Happiness": 0.0565,
+    "Sadness": 0.0138,
+    "Anger": 0.0081,
+    "Fear": 0.0416,
+    "Surprise": 0.0621,
+    "Disgust": 0.062
+  },
+  "valence": -0.0037,
+  "arousal": 0.1112
 }
 ```
 
@@ -76,6 +100,8 @@ docker compose logs -f
 │   ├── config.py      # 设备配置、AU 列表、融合权重
 │   ├── facs_engine.py # OpenFace 3.0 封装 + EMFACS 规则映射
 │   └── server.py      # FastAPI 服务（/analyze, /ws/stream, /health）
+├── assets/
+│   └── sample_face.jpg # 示例测试图片
 ├── test_client.html   # 前端测试页面（MediaPipe + WebSocket）
 ├── Dockerfile         # Docker 构建（python:3.11-slim + CPU torch）
 ├── docker-compose.yml # 一键部署
