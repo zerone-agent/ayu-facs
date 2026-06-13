@@ -72,9 +72,10 @@ docker compose logs -f
 ## 项目结构
 
 ```
-├── config.py          # 设备配置、AU 列表、融合权重
-├── facs_engine.py     # OpenFace 3.0 封装 + EMFACS 规则映射
-├── server.py          # FastAPI 服务（/analyze, /ws/stream, /health）
+├── src/
+│   ├── config.py      # 设备配置、AU 列表、融合权重
+│   ├── facs_engine.py # OpenFace 3.0 封装 + EMFACS 规则映射
+│   └── server.py      # FastAPI 服务（/analyze, /ws/stream, /health）
 ├── test_client.html   # 前端测试页面（MediaPipe + WebSocket）
 ├── Dockerfile         # Docker 构建（python:3.11-slim + CPU torch）
 ├── docker-compose.yml # 一键部署

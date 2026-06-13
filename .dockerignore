@@ -5,3 +5,8 @@ docs/superpowers
 tests
 *.md
 .DS_Store
+.yione-uploads
+weights
+*.pth
+*.pkl
+*.tar

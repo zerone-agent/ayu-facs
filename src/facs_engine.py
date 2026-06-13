@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 import torch
 
-from config import (
+from src.config import (
     CORE_AUS,
     EMFACS_EMOTION_WEIGHT,
     FACE_DETECTION_THRESHOLD,

@@ -32,8 +32,10 @@ ENV HF_ENDPOINT=https://hf-mirror.com
 RUN python -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='nutPace/openface_weights', local_dir='./weights', repo_type='model')"
 
-COPY config.py facs_engine.py server.py test_client.html ./
+COPY src/ ./src/
+COPY test_client.html ./
 
 ENV OPENFACE_WEIGHTS_DIR=/app/weights
+ENV PYTHONPATH=/app
 EXPOSE 8000
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.server:app", "--host", "0.0.0.0", "--port", "8000"]
