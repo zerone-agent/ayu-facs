@@ -27,9 +27,9 @@ FACES_TARGETS = {
 }
 
 SURPRISE = {
-    "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/The_sincerity_of_amazement.jpg",
+    "url": "https://upload.wikimedia.org/wikipedia/commons/4/41/Wow_%282984852075%29.jpg",
     "filename": "surprise.jpg",
-    "attribution": "Alberto Castello, CC BY-SA 4.0",
+    "attribution": "Marcus Quigmire, CC BY-SA 2.0",
 }
 
 
