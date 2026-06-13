@@ -2,7 +2,7 @@ services:
   facs:
     build: .
     ports:
-      - "8001:8000"
+      - "8003:8000"
     environment:
       - DEVICE=auto
       - MAX_FPS=10

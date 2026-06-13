@@ -25,10 +25,10 @@
 
 ```bash
 # 本地
-curl -X POST http://localhost:8001/analyze -F 'file=@assets/sample_face.jpg'
+curl -X POST http://localhost:8003/analyze -F 'file=@assets/sample_face.jpg'
 
 # 远程 ECS 示例
-curl -X POST http://47.120.38.148:8001/analyze \
+curl -X POST http://47.120.38.148:8003/analyze \
   -F 'file=@assets/sample_face.jpg' \
   -w "\nHTTP_CODE: %{http_code}\nTIME_TOTAL: %{time_total}s\n"
 ```
@@ -77,7 +77,7 @@ docker compose up -d
 docker compose logs -f
 ```
 
-默认端口：宿主机 8001 → 容器 8000。
+默认端口：宿主机 8003 → 容器 8000。
 
 ### GPU 模式
 
