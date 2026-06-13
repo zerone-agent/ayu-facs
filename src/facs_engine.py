@@ -219,6 +219,17 @@ class FACSengine:
 
             # FaceDetector.get_face() only accepts file path — write to temp
             image_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
+
+            # Resize large images to speed up RetinaFace detection.
+            # Clients should ideally resize before upload, but we guard here too.
+            max_edge = max(image_bgr.shape[:2])
+            DETECTOR_MAX_EDGE = int(os.getenv("DETECTOR_MAX_EDGE", "640"))
+            if max_edge > DETECTOR_MAX_EDGE:
+                scale = DETECTOR_MAX_EDGE / max_edge
+                image_bgr = cv2.resize(
+                    image_bgr, None, fx=scale, fy=scale, interpolation=cv2.INTER_LINEAR
+                )
+
             tmp_path = os.path.join(self._tmpdir, "frame.jpg")
             cv2.imwrite(tmp_path, image_bgr)
 

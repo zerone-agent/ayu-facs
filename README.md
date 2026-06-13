@@ -33,6 +33,8 @@ curl -X POST http://47.120.38.148:8003/analyze \
   -w "\nHTTP_CODE: %{http_code}\nTIME_TOTAL: %{time_total}s\n"
 ```
 
+> **性能建议**：上传前将图片长边压缩到 640px 以下，可显著降低网络传输和 CPU 人脸检测耗时。服务端也会自动将大图等比缩放到 `DETECTOR_MAX_EDGE`（默认 640px）作为兜底。
+
 返回示例（基于 `assets/sample_face.jpg` 实测）：
 
 ```json

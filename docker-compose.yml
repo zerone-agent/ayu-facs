@@ -6,6 +6,7 @@ services:
     environment:
       - DEVICE=auto
       - MAX_FPS=10
+      - DETECTOR_MAX_EDGE=640
     # GPU support (uncomment to enable)
     # deploy:
     #   resources:
