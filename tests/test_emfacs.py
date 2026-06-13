@@ -1,5 +1,5 @@
 import pytest
-from src.facs_engine import map_emfacs_emotions, fuse_emotions
+from facs_engine import map_emfacs_emotions, fuse_emotions
 
 
 def test_happiness_au06_au12_both_high():

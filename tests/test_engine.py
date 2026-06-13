@@ -6,13 +6,13 @@ import pytest
 import torch
 from unittest.mock import MagicMock, patch
 
-from src.facs_engine import FACSengine
+from facs_engine import FACSengine
 
 
 @pytest.fixture
 def mock_init():
     """Mock OpenFace 3.0 detector and multitask predictor."""
-    with patch("src.facs_engine._init_openface") as mock_create:
+    with patch("facs_engine._init_openface") as mock_create:
         detector = MagicMock()
         predictor = MagicMock()
 

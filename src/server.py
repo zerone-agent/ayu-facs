@@ -9,8 +9,8 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, UploadFile, File
 from fastapi.responses import HTMLResponse
 from pathlib import Path
 
-from src.config import MAX_FPS
-from src.facs_engine import FACSengine
+from config import MAX_FPS
+from facs_engine import FACSengine
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
