@@ -13,9 +13,22 @@ weights/
 *.log
 
 .yione-uploads/
+.DS_Store
 
 # Benchmark images (download separately due to licenses)
 benchmarks/images/*.jpg
 !benchmarks/images/surprise.jpg
 benchmarks/images/*.png
 benchmarks/images/results.json
+
+# Generated files
+*.pdf
+md2pdf.py
+
+# PPT slides (HTML deck)
+ppt-slides/
+
+# Node.js (huashu-design skill deps)
+node_modules/
+package.json
+package-lock.json
