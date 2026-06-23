@@ -22,11 +22,10 @@ benchmarks/images/*.png
 benchmarks/images/results.json
 
 # Generated files
-*.pdf
-md2pdf.py
+reports/*.pdf
 
 # PPT slides (HTML deck)
-ppt-slides/
+reports/ppt-slides/
 
 # Node.js (huashu-design skill deps)
 node_modules/
