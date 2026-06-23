@@ -23,6 +23,7 @@ benchmarks/images/results.json
 
 # Generated files
 reports/*.pdf
+codes.zip
 
 # PPT slides (HTML deck)
 reports/ppt-slides/
